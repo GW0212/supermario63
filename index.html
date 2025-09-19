@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>supermario63 - Flash Launcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Ruffle: Flash 에뮬레이터 (CDN) -->
+  <!-- 기본 CDN -->
+  <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+  <!-- 예비(대체) CDN: 기본 CDN 차단/지연시 자동 로드 -->
+  <script>
+    (function ensureRuffle() {
+      const onReady = () => {
+        if (!window.RufflePlayer) {
+          const s = document.createElement('script');
+          s.src = "https://cdn.jsdelivr.net/npm/@ruffle-rs/ruffle";
+          document.head.appendChild(s);
+        }
+      };
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", onReady);
+      } else {
+        onReady();
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- favicon 설정 (16x16 PNG) -->
+  <link rel="icon" href="favicon.png" type="image/png" sizes="16x16" />
+
+  <meta name="color-scheme" content="dark light">
+</head>
+<body>
+  <header class="site-header">
+    <h1>supermario63</h1>
+    <p class="subtitle">Flash 에뮬레이터(Ruffle)로 브라우저에서 바로 플레이</p>
+  </header>
+
+  <main class="container">
+    <section class="player-card">
+      <div class="player-toolbar">
+        <button id="btnReload" class="btn" title="다시 로드">🔄 다시 로드</button>
+        <button id="btnFullscreen" class="btn" title="전체화면 전환">⛶ 전체화면</button>
+        <label class="file-label" for="fileInput">
+          💾 SWF 파일 열기
+          <input id="fileInput" type="file" accept=".swf" />
+        </label>
+      </div>
+
+      <!-- 무대 -->
+      <div id="stage" class="stage" aria-label="게임 무대" tabindex="0"></div>
+
+      <p class="hint">
+        기본으로 <code>assets/supermario63.swf</code>를 로드합니다.<br/>
+        다른 SWF를 시험해보고 싶으면 위의 <b>SWF 파일 열기</b> 버튼을 사용하거나 무대에 <b>드래그&드롭</b>하세요.<br/>
+        ↑↓←→, Space 등 키 입력이 안 먹을 땐 무대를 한 번 클릭해 포커스를 주세요.
+      </p>
+    </section>
+
+    <section class="faq">
+      <details>
+        <summary>실행 안 될 때 체크리스트</summary>
+        <ul>
+          <li><b>파일 경로</b>: <code>assets/supermario63.swf</code> 가 실제로 존재하는지 확인</li>
+          <li><b>정적 서버</b>: 일부 브라우저는 <code>file://</code> 로드 시 WASM/SWF 접근을 제한합니다.<br/>
+            간단한 서버(예: VSCode Live Server, 또는 터미널에서 <code>python -m http.server</code>)로 열어주세요.</li>
+          <li><b>강력 새로고침</b>: 캐시 문제일 수 있어 Ctrl+F5 시도</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <small>© 2025 Flash Game Launcher · Ruffle 기반</small>
+  </footer>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const fileInput = document.getElementById('fileInput');
+    const btnReload = document.getElementById('btnReload');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+
+    let rufflePlayer;
+    let currentSrc = "assets/supermario63.swf";
+
+    function createPlayer() {
+      stage.innerHTML = "";
+      stage.classList.remove('dragover');
+
+      // Ruffle 최신 인스턴스 생성
+      const ruffle = window.RufflePlayer?.newest?.();
+      if (!ruffle) {
+        stage.innerHTML = `
+          <div class="error">
+            <p>Ruffle 초기화 중입니다. 잠시 후 다시 시도해주세요.</p>
+            <p class="mono">RufflePlayer not ready</p>
+          </div>`;
+        return;
+      }
+
+      rufflePlayer = ruffle.createPlayer();
+      rufflePlayer.classList.add("ruffle-player");
+      stage.appendChild(rufflePlayer);
+
+      // 무대 채우기
+      rufflePlayer.style.width = "100%";
+      rufflePlayer.style.height = "100%";
+
+      // SWF 로드
+      rufflePlayer.load(currentSrc).then(() => {
+        // 키보드 입력 포커스 확보
+        stage.focus();
+      }).catch(err => {
+        console.error("SWF 로드 실패:", err);
+        stage.innerHTML = `
+          <div class="error">
+            <p>SWF 로드에 실패했습니다.</p>
+            <p class="mono">${escapeHtml(String(err))}</p>
+            <p>경로와 서버 구동 여부를 확인해주세요.</p>
+          </div>`;
+      });
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // 파일 열기
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      currentSrc = url;
+      createPlayer();
+    });
+
+    // 드래그&드롭
+    stage.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      stage.classList.add('dragover');
+    });
+    stage.addEventListener('dragleave', () => stage.classList.remove('dragover'));
+    stage.addEventListener('drop', (e) => {
+      e.preventDefault();
+      stage.classList.remove('dragover');
+      const file = e.dataTransfer?.files?.[0];
+      if (file && file.name.toLowerCase().endsWith('.swf')) {
+        const url = URL.createObjectURL(file);
+        currentSrc = url;
+        createPlayer();
+      }
+    });
+
+    // 다시 로드
+    btnReload.addEventListener('click', () => createPlayer());
+
+    // 전체화면 (Ruffle 전용 API 우선)
+    btnFullscreen.addEventListener('click', () => {
+      if (!rufflePlayer) return;
+      if (typeof rufflePlayer.enterFullscreen === 'function') {
+        rufflePlayer.enterFullscreen();
+      } else if (rufflePlayer.requestFullscreen) {
+        rufflePlayer.requestFullscreen();
+      } else if (stage.requestFullscreen) {
+        stage.requestFullscreen();
+      }
+    });
+
+    // 키보드 포커스(화살표/스페이스 등 입력)
+    stage.addEventListener('click', () => stage.focus());
+
+    // 초기 로드
+    document.addEventListener('DOMContentLoaded', createPlayer);
+  </script>
+</body>
+</html>

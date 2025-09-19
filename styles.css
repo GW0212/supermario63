@@ -1,0 +1,154 @@
+:root{
+  --bg: #0b0d12;
+  --fg: #e7eaf0;
+  --muted: #9aa3b2;
+  --card: #131722;
+  --accent: #6ea8fe;
+  --accent-2: #8b5cf6;
+  --border: #1e2430;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", Arial, "Helvetica Neue", sans-serif;
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(110,168,254,0.1), transparent),
+              radial-gradient(1000px 500px at 120% 10%, rgba(139,92,246,0.08), transparent),
+              var(--bg);
+  color: var(--fg);
+}
+
+.site-header, .site-footer {
+  text-align: center;
+  padding: 20px 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.2px;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.player-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 60%),
+              var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  padding: 16px;
+}
+
+.player-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.btn, .file-label {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.btn:hover, .file-label:hover {
+  transform: translateY(-1px);
+  border-color: rgba(110,168,254,0.6);
+  box-shadow: 0 6px 18px rgba(110,168,254,0.15);
+}
+
+.file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.file-label input[type="file"] {
+  display: none;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  /* 4:3 기본 비율 (SWF가 다른 비율이면 내부에서 맞춰집니다) */
+  aspect-ratio: 4 / 3;
+  background:
+    radial-gradient(400px 200px at 20% 10%, rgba(110,168,254,0.08), transparent 60%),
+    radial-gradient(300px 160px at 100% 100%, rgba(139,92,246,0.08), transparent 60%),
+    #0f1220;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  outline: none;
+}
+
+.stage.dragover {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+  filter: drop-shadow(0 0 20px rgba(110,168,254,.25));
+}
+
+.ruffle-player {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin: 12px 4px 0;
+}
+
+.faq {
+  margin-top: 18px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.faq summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+
+.faq ul {
+  margin: 8px 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.error {
+  padding: 28px;
+  text-align: center;
+}
+.error p { margin: 8px 0; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.site-footer small {
+  color: var(--muted);
+}

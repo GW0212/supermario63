@@ -2,15 +2,16 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <title>supermario63 - Flash Launcher</title>
+  <title>Super Mario 63 — Flash Launcher</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Ruffle: Flash 에뮬레이터 (CDN) -->
-  <!-- 기본 CDN -->
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
-  <!-- 예비(대체) CDN: 기본 CDN 차단/지연시 자동 로드 -->
   <script>
-    (function ensureRuffle() {
+    (function() {
       const onReady = () => {
         if (!window.RufflePlayer) {
           const s = document.createElement('script');
@@ -18,166 +19,198 @@
           document.head.appendChild(s);
         }
       };
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", onReady);
-      } else {
-        onReady();
-      }
+      document.readyState === "loading"
+        ? document.addEventListener("DOMContentLoaded", onReady)
+        : onReady();
     })();
   </script>
-
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- favicon 설정 (16x16 PNG) -->
-  <link rel="icon" href="favicon.png" type="image/png" sizes="16x16" />
-
-  <meta name="color-scheme" content="dark light">
 </head>
 <body>
-  <header class="site-header">
-    <h1>supermario63</h1>
-    <p class="subtitle">Flash 에뮬레이터(Ruffle)로 브라우저에서 바로 플레이</p>
-  </header>
 
-  <main class="container">
-    <section class="player-card">
-      <div class="player-toolbar">
-        <button id="btnReload" class="btn" title="다시 로드">🔄 다시 로드</button>
-        <button id="btnFullscreen" class="btn" title="전체화면 전환">⛶ 전체화면</button>
-        <label class="file-label" for="fileInput">
-          💾 SWF 파일 열기
-          <input id="fileInput" type="file" accept=".swf" />
-        </label>
+  <!-- Scanline overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Background grid -->
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- Floating particles -->
+  <div class="particles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="layout">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+      <div class="logo-block">
+        <div class="logo-text">
+          <span class="logo-title">SUPER MARIO</span>
+          <span class="logo-title accent">63</span>
+        </div>
       </div>
 
-      <!-- 무대 -->
-      <div id="stage" class="stage" aria-label="게임 무대" tabindex="0"></div>
+      <nav class="controls">
+        <p class="controls-label">CONTROLS</p>
 
-      <p class="hint">
-        기본으로 <code>assets/supermario63.swf</code>를 로드합니다.<br/>
-        다른 SWF를 시험해보고 싶으면 위의 <b>SWF 파일 열기</b> 버튼을 사용하거나 무대에 <b>드래그&드롭</b>하세요.<br/>
-        ↑↓←→, Space 등 키 입력이 안 먹을 땐 무대를 한 번 클릭해 포커스를 주세요.
-      </p>
-    </section>
+        <button id="btnReload" class="ctrl-btn">
+          <span class="ctrl-icon">↺</span>
+          <span class="ctrl-text">다시 로드</span>
+        </button>
 
-    <section class="faq">
-      <details>
-        <summary>실행 안 될 때 체크리스트</summary>
-        <ul>
-          <li><b>파일 경로</b>: <code>assets/supermario63.swf</code> 가 실제로 존재하는지 확인</li>
-          <li><b>정적 서버</b>: 일부 브라우저는 <code>file://</code> 로드 시 WASM/SWF 접근을 제한합니다.<br/>
-            간단한 서버(예: VSCode Live Server, 또는 터미널에서 <code>python -m http.server</code>)로 열어주세요.</li>
-          <li><b>강력 새로고침</b>: 캐시 문제일 수 있어 Ctrl+F5 시도</li>
-        </ul>
-      </details>
-    </section>
-  </main>
+        <button id="btnFullscreen" class="ctrl-btn">
+          <span class="ctrl-icon">⛶</span>
+          <span class="ctrl-text">전체화면</span>
+        </button>
 
-  <footer class="site-footer">
-    <small>© 2025 Flash Game Launcher · Ruffle 기반</small>
-  </footer>
+        <label class="ctrl-btn file-label" for="fileInput">
+          <span class="ctrl-icon">⊕</span>
+          <span class="ctrl-text">SWF 열기</span>
+          <input id="fileInput" type="file" accept=".swf" />
+        </label>
+      </nav>
+
+
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="main">
+
+      <!-- Top bar -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">초기화 중...</span>
+        </div>
+
+      </div>
+
+      <!-- Stage wrapper -->
+      <div class="stage-wrap">
+        <div class="stage-corner tl"></div>
+        <div class="stage-corner tr"></div>
+        <div class="stage-corner bl"></div>
+        <div class="stage-corner br"></div>
+
+        <div id="stage" class="stage" aria-label="게임 무대" tabindex="0"></div>
+
+        <!-- Drop overlay -->
+        <div class="drop-overlay" id="dropOverlay" aria-hidden="true"></div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="bottombar">
+        <details class="faq-inline">
+          <summary>실행 안 될 때</summary>
+          <div class="faq-body">
+            <p><b>파일 경로</b> — <code>assets/supermario63.swf</code>가 같은 폴더에 있는지 확인</p>
+            <p><b>정적 서버</b> — <code>file://</code> 프로토콜은 WASM 로드를 차단할 수 있음. <code>python -m http.server</code> 또는 VSCode Live Server로 실행</p>
+            <p><b>강력 새로고침</b> — Ctrl+F5 또는 캐시 비우기 후 재시도</p>
+          </div>
+        </details>
+      </div>
+
+    </main>
+  </div>
 
   <script>
-    const stage = document.getElementById('stage');
-    const fileInput = document.getElementById('fileInput');
-    const btnReload = document.getElementById('btnReload');
+    const stage       = document.getElementById('stage');
+    const fileInput   = document.getElementById('fileInput');
+    const btnReload   = document.getElementById('btnReload');
     const btnFullscreen = document.getElementById('btnFullscreen');
+    const dropOverlay = document.getElementById('dropOverlay');
+    const statusDot   = document.getElementById('statusDot');
+    const statusText  = document.getElementById('statusText');
 
     let rufflePlayer;
     let currentSrc = "assets/supermario63.swf";
 
-    function createPlayer() {
-      stage.innerHTML = "";
-      stage.classList.remove('dragover');
-
-      // Ruffle 최신 인스턴스 생성
-      const ruffle = window.RufflePlayer?.newest?.();
-      if (!ruffle) {
-        stage.innerHTML = `
-          <div class="error">
-            <p>Ruffle 초기화 중입니다. 잠시 후 다시 시도해주세요.</p>
-            <p class="mono">RufflePlayer not ready</p>
-          </div>`;
-        return;
-      }
-
-      rufflePlayer = ruffle.createPlayer();
-      rufflePlayer.classList.add("ruffle-player");
-      stage.appendChild(rufflePlayer);
-
-      // 무대 채우기
-      rufflePlayer.style.width = "100%";
-      rufflePlayer.style.height = "100%";
-
-      // SWF 로드
-      rufflePlayer.load(currentSrc).then(() => {
-        // 키보드 입력 포커스 확보
-        stage.focus();
-      }).catch(err => {
-        console.error("SWF 로드 실패:", err);
-        stage.innerHTML = `
-          <div class="error">
-            <p>SWF 로드에 실패했습니다.</p>
-            <p class="mono">${escapeHtml(String(err))}</p>
-            <p>경로와 서버 구동 여부를 확인해주세요.</p>
-          </div>`;
-      });
+    function setStatus(state, msg) {
+      statusDot.className = 'status-dot ' + state;
+      statusText.textContent = msg;
     }
 
     function escapeHtml(s) {
       return s
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;");
     }
 
-    // 파일 열기
-    fileInput.addEventListener('change', (e) => {
+    function createPlayer() {
+      stage.innerHTML = "";
+      setStatus('loading', '로딩 중...');
+
+      const ruffle = window.RufflePlayer?.newest?.();
+      if (!ruffle) {
+        stage.innerHTML = `
+          <div class="error-state">
+            <div class="error-code">ERR_RUFFLE_NOT_READY</div>
+            <p>Ruffle 엔진을 초기화하는 중입니다.<br/>잠시 후 다시 시도해주세요.</p>
+            <button class="retry-btn" onclick="createPlayer()">재시도</button>
+          </div>`;
+        setStatus('error', 'Ruffle 미준비');
+        return;
+      }
+
+      rufflePlayer = ruffle.createPlayer();
+      rufflePlayer.style.cssText = "width:100%;height:100%;display:block;";
+      stage.appendChild(rufflePlayer);
+
+      rufflePlayer.load(currentSrc)
+        .then(() => setStatus('ok', '실행 중'))
+        .catch(err => {
+          console.error(err);
+          stage.innerHTML = `
+            <div class="error-state">
+              <div class="error-code">ERR_SWF_LOAD_FAILED</div>
+              <p>SWF 파일을 불러올 수 없습니다.<br/>경로와 서버 구동 여부를 확인하세요.</p>
+              <code class="error-detail">${escapeHtml(String(err))}</code>
+              <button class="retry-btn" onclick="createPlayer()">재시도</button>
+            </div>`;
+          setStatus('error', '로드 실패');
+        });
+    }
+
+    fileInput.addEventListener('change', e => {
       const file = e.target.files?.[0];
       if (!file) return;
-      const url = URL.createObjectURL(file);
-      currentSrc = url;
+      currentSrc = URL.createObjectURL(file);
       createPlayer();
     });
 
-    // 드래그&드롭
-    stage.addEventListener('dragover', (e) => {
+    // Drag & drop on stage wrapper
+    const stageWrap = document.querySelector('.stage-wrap');
+    stageWrap.addEventListener('dragover', e => {
       e.preventDefault();
-      stage.classList.add('dragover');
+      dropOverlay.classList.add('visible');
     });
-    stage.addEventListener('dragleave', () => stage.classList.remove('dragover'));
-    stage.addEventListener('drop', (e) => {
+    stageWrap.addEventListener('dragleave', e => {
+      if (!stageWrap.contains(e.relatedTarget)) {
+        dropOverlay.classList.remove('visible');
+      }
+    });
+    stageWrap.addEventListener('drop', e => {
       e.preventDefault();
-      stage.classList.remove('dragover');
+      dropOverlay.classList.remove('visible');
       const file = e.dataTransfer?.files?.[0];
-      if (file && file.name.toLowerCase().endsWith('.swf')) {
-        const url = URL.createObjectURL(file);
-        currentSrc = url;
+      if (file?.name.toLowerCase().endsWith('.swf')) {
+        currentSrc = URL.createObjectURL(file);
         createPlayer();
       }
     });
 
-    // 다시 로드
     btnReload.addEventListener('click', () => createPlayer());
 
-    // 전체화면 (Ruffle 전용 API 우선)
     btnFullscreen.addEventListener('click', () => {
       if (!rufflePlayer) return;
-      if (typeof rufflePlayer.enterFullscreen === 'function') {
-        rufflePlayer.enterFullscreen();
-      } else if (rufflePlayer.requestFullscreen) {
-        rufflePlayer.requestFullscreen();
-      } else if (stage.requestFullscreen) {
-        stage.requestFullscreen();
-      }
+      if (typeof rufflePlayer.enterFullscreen === 'function') rufflePlayer.enterFullscreen();
+      else if (rufflePlayer.requestFullscreen) rufflePlayer.requestFullscreen();
+      else stage.requestFullscreen?.();
     });
 
-    // 키보드 포커스(화살표/스페이스 등 입력)
     stage.addEventListener('click', () => stage.focus());
 
-    // 초기 로드
     document.addEventListener('DOMContentLoaded', createPlayer);
   </script>
 </body>
